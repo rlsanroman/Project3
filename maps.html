@@ -63,17 +63,18 @@
                 }
             });
 
-            var weatherLayer = new google.maps.weather.WeatherLayer({
-                temperatureUnits: google.maps.weather.TemperatureUnit.FAHRENHEIT
-            });
-            weatherLayer.setMap(map);
+           // var weatherLayer = new google.maps.weather.WeatherLayer({
+            //    temperatureUnits: google.maps.weather.TemperatureUnit.FAHRENHEIT
+            //});
+           // weatherLayer.setMap(map);
 
-            var cloudLayer = new google.maps.weather.CloudLayer();
-            cloudLayer.setMap(map);
+          //  var cloudLayer = new google.maps.weather.CloudLayer();
+           // cloudLayer.setMap(map);
 
 			google.maps.event.addListener(map,"click",function(event){
 				locations.push(event.latLng);
 				console.log("~~~~~~~~LOCATIONS~~~~~~~~~~~~");
+				GetWeatherForLocation(event.latLng.lat(),event.latLng.lng());
                 for(i = 0; i < locations.length; i++)
                 {
                     console.log("lat = " + locations[i].lat() + ", long = " + locations[i].lng());
@@ -121,13 +122,14 @@
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
     <script>
         function GetWeatherForLocation(lat, lon)
-        {
+		{
             $.ajax({
                 url:
-                        "http://api.wundergorund.com/api/44436df8c5396f7d/geolookup/conditions/q/"+lat+","+lon+".json",
+                        "http://api.wunderground.com/api/44436df8c5396f7d/geolookup/conditions/q/"+lat+","+lon+".json",
                 dataType: "jsonp",
                 success : function(parsed_json) {
                     var location = parsed_json['location']['city'];
+					var zip = parsed_json['location']['zip']
                     var realTemp_f = parsed_json['current_observation']['temp_f'];
                     var realTemp_c = parsed_json['current_observation']['temp_c'];
                     var feelsLike_f = parsed_json['current_observation']['feelslike_f'];
@@ -135,7 +137,7 @@
                     var wind = parsed_json['current_observation']['wind_mph'];
                     var humidity = parsed_json['current_observation']['relative_humidity'];
                     var precip = parsed_json['current_observation']['precip_today_string'];
-                    alert("Temp in " + location + "is: "+realTemp_c + "\nfeels like: "+feelsLike_c);
+                    alert("Temp in " + location + "(" + zip + ") is: "+realTemp_f + "F\nfeels like: "+feelsLike_f +"F");
 
                 }
             });
