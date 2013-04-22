@@ -7,74 +7,41 @@
     </script>
 
     <script type="text/javascript">
-        var home = prompt("Enter your Home address");
-        var dest = window.prompt("Enter your Destination address");
+		var map;
+		var placesList;
+		var address1; 
+		var address2;
+		var directionsDisplay;
+		var location2;
         var directionsService = new google.maps.DirectionsService();
 		var locations = new Array();
         function initialize()
         {
-            var location = new google.maps.LatLng(30.613391, -96.338425);
-            var map_options = {
-                zoom: 5,
-                center: location,
-                mapTypeId: google.maps.MapTypeId.ROADMAP
-            };
-            var map = new google.maps.Map(document.getElementById("map_canvas"),map_options)
-            var directionsDisplay = new google.maps.DirectionsRenderer({'map':map});
-
-            var geo = new google.maps.Geocoder;
-            geo.geocode({'address':home},function(results, status){
-                if (status == google.maps.GeocoderStatus.OK) {
-                    map.setCenter(results[0].geometry.location);
-                    var marker = new google.maps.Marker({
-                        position: results[0].geometry.location,
-                        map: map,
-                        title: 'Current',
-                        draggable: false
-                    });
-                } else {
-                    alert("Geocode was not successful for the following reason: " + status);
-                }
-
-            });
-            var geo = new google.maps.Geocoder;
-            geo.geocode({'address':dest},function(results, status){
-                if (status == google.maps.GeocoderStatus.OK) {
-                    map.setCenter(results[0].geometry.location);
-                    var marker = new google.maps.Marker({
-                        position: results[0].geometry.location,
-                        map: map,
-                        title: 'Destination',
-                        draggable: false
-                    });
-                } else {
-                    alert("Geocode was not successful for the following reason: " + status);
-                }
-
-            });
-            var request = {
-                origin:home,
-                destination:dest,
-                travelMode: google.maps.DirectionsTravelMode.DRIVING
-            };
-            directionsService.route(request, function(response, status) {
-                if (status == google.maps.DirectionsStatus.OK) {
-                    directionsDisplay.setDirections(response);
-                }
-            });
-
-           // var weatherLayer = new google.maps.weather.WeatherLayer({
-            //    temperatureUnits: google.maps.weather.TemperatureUnit.FAHRENHEIT
-            //});
-           // weatherLayer.setMap(map);
-
-          //  var cloudLayer = new google.maps.weather.CloudLayer();
-           // cloudLayer.setMap(map);
-
+           	var location = new google.maps.LatLng(30.613391, -96.338425);
+			location2=location;
+			var map_options = {
+			zoom: 5,
+			center: location,
+			mapTypeId: google.maps.MapTypeId.ROADMAP
+			};
+			map = new google.maps.Map(document.getElementById("map_canvas"),map_options)
+			directionsDisplay = new google.maps.DirectionsRenderer({'map':map});
+			
 			google.maps.event.addListener(map,"click",function(event){
+				
 				locations.push(event.latLng);
 				console.log("~~~~~~~~LOCATIONS~~~~~~~~~~~~");
-				GetWeatherForLocation(event.latLng.lat(),event.latLng.lng());
+				var results = new Array();
+				results = GetWeatherForLocation(event.latLng.lat(),event.latLng.lng());
+				//console.log('results = ' + results[0]);
+				var image = new google.maps.MarkerImage('http://icons-ak.wxug.com/i/c/k/clear.gif ',null,null,null, new google.maps.Size(16,24));
+				
+				var marker = new google.maps.Marker({
+                        position: event.latLng,
+                        map: map,
+                        title: 'hi',
+						icon: image
+                    });
                 for(i = 0; i < locations.length; i++)
                 {
                     console.log("lat = " + locations[i].lat() + ", long = " + locations[i].lng());
@@ -86,8 +53,8 @@
             var service = new google.maps.DistanceMatrixService();
             service.getDistanceMatrix(
                     {
-                        origins: [home],
-                        destinations: [dest],
+                        origins: [address1],
+                        destinations: [address2],
                         travelMode: google.maps.TravelMode.DRIVING,
                         unitSystem: google.maps.UnitSystem.IMPERIAL,
                         avoidHighways: false,
@@ -116,20 +83,137 @@
         }
 
 
+	function places(){
+		var request1 = {
+		   location: location2,
+		   radius: 5000,
+		   types: ['lodging']
+		};
+
+		placesList = document.getElementById('places');
+
+		var service = new google.maps.places.PlacesService(map);
+		service.nearbySearch(request1, callback1);
+	}
+		
+	function callback1(results, status, pagination) {
+	 if (status != google.maps.places.PlacesServiceStatus.OK) {
+	   return;
+	 } else {
+	   createMarkers(results);
+
+	   if (pagination.hasNextPage) {
+		var moreButton = document.getElementById('more');
+
+		moreButton.disabled = false;
+
+		google.maps.event.addDomListenerOnce(moreButton, 'click',
+			function() {
+			moreButton.disabled = true;
+			pagination.nextPage();
+		});
+	   }
+	 }
+	}
+		
+	function createMarkers(places) {
+		var bounds = new google.maps.LatLngBounds();
+
+		for (var i = 0, place; place = places[i]; i++) {
+			var image = {
+				url: place.icon,
+				size: new google.maps.Size(71, 71),
+				origin: new google.maps.Point(0, 0),
+				anchor: new google.maps.Point(17, 34),
+				scaledSize: new google.maps.Size(25, 25)
+			};
+
+			var marker = new google.maps.Marker({
+				map: map,
+				icon: image,
+				title: place.name,
+				position: place.geometry.location
+			});
+
+			placesList.innerHTML += '<li>' + place.name + '</li>';
+	
+			bounds.extend(place.geometry.location);
+		}
+		map.fitBounds(bounds);
+	}
+	
+	function geoAddress(id){
+		var geo = new google.maps.Geocoder;
+		if(id == 'address2')
+		{
+			address2 = document.getElementById(id).value;
+			geo.geocode({'address':address2},function(results, status){
+				if (status == google.maps.GeocoderStatus.OK) {
+					map.setCenter(results[0].geometry.location);
+					var marker = new google.maps.Marker({
+						position: results[0].geometry.location,
+						map: map,
+						title: 'Destination',
+						draggable: false
+					});
+				} else {
+					alert("Geocode was not successful for the following reason: " + status);
+				}
+
+			});
+		}
+		else if (id == 'address1')
+			{
+			address1 = document.getElementById(id).value;
+			geo.geocode({'address':address1},function(results, status){
+				if (status == google.maps.GeocoderStatus.OK) {
+				map.setCenter(results[0].geometry.location);
+				var marker = new google.maps.Marker({
+					position: results[0].geometry.location,
+					map: map,
+					title: 'Home',
+					draggable: false
+				});
+				} else {
+					alert("Geocode was not successful for the following reason: " + status);
+				}
+
+				});
+			} 
+		}
+		
+		function createroute(){
+		var request = {
+			origin:address1, 
+			destination:address2,
+			travelMode: google.maps.DirectionsTravelMode.DRIVING
+		};
+		directionsService.route(request, function(response, status) {
+			if (status == google.maps.DirectionsStatus.OK) {
+			directionsDisplay.setDirections(response);
+			}
+		});
+	}
+		
         google.maps.event.addDomListener(window, 'load', initialize);
 
+		
+		
+		
     </script>
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
     <script>
         function GetWeatherForLocation(lat, lon)
 		{
+			var results = new Array();
             $.ajax({
                 url:
                         "http://api.wunderground.com/api/44436df8c5396f7d/geolookup/conditions/q/"+lat+","+lon+".json",
                 dataType: "jsonp",
+				async: false,
                 success : function(parsed_json) {
                     var location = parsed_json['location']['city'];
-					var zip = parsed_json['location']['zip']
+					var zip = parsed_json['location']['zip'];
                     var realTemp_f = parsed_json['current_observation']['temp_f'];
                     var realTemp_c = parsed_json['current_observation']['temp_c'];
                     var feelsLike_f = parsed_json['current_observation']['feelslike_f'];
@@ -137,22 +221,105 @@
                     var wind = parsed_json['current_observation']['wind_mph'];
                     var humidity = parsed_json['current_observation']['relative_humidity'];
                     var precip = parsed_json['current_observation']['precip_today_string'];
+					var weather = parsed_json['current_observation']['weather'];
+					var weatherpic = parsed_json['current_observation']['icon_url'];
+					
+					results.push(location);
+					results.push(zip);
+					results.push(realTemp_f);
+					results.push(realTemp_c);
+					results.push(feelsLike_f);
+					results.push(feelsLike_c);
+					results.push(wind);
+					results.push(humidity);
+					results.push(precip);
+					results.push(weather);
+					results.push(weatherpic);
+					
+					console.log("logo = " + weatherpic);
                     alert("Temp in " + location + "(" + zip + ") is: "+realTemp_f + "F\nfeels like: "+feelsLike_f +"F");
-
+					
                 }
             });
+			
+			//return results;
         }
     </script>
-
+	<style>
+		#results {
+			font-family: Arial, Helvetica, sans-serif;
+			position: absolute;
+			right: 5px;
+			top: 50%;
+			margin-top: -195px;
+			height: 380px;
+			width: 200px;
+			padding: 5px;
+			z-index: 5;
+			border: 1px solid #999;
+			background: #fff;
+		}
+		h2 {
+			font-size: 22px;
+			margin: 0 0 5px 0;
+		}
+		ul {
+			list-style-type: none;
+			padding: 0;
+			margin: 0;
+			height: 321px;
+			width: 200px;
+			overflow-y: scroll;
+		}
+		li {
+			background-color: #f1f1f1;
+			padding: 10px;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			overflow: hidden;
+		}
+		li:nth-child(odd) {
+			background-color: #fcfcfc;
+		}
+		#more {
+			width: 100%;
+			margin: 5px 0 0 0;
+		}
+	</style>
 </head>
 <body onload= "initialize()" bgcolor="#00BFFF">
-<div id="content-pane">
-    <div id="inputs">
-        <p><button type="button" onclick="calculateDistances();">Calculate
-            distance</button></p>
-    </div>
-    <div id="outputDiv"></div>
+<div>
+ <input id="address1" type="textbox" value="" style=" width:400px;height:20px;font-size:15px;"> 
+     <input type="button" value="Home" onclick="geoAddress('address1')"> 
 </div>
-<div id="map_canvas" style="width:700px; height:600px;">  </div>
+<div>
+ <input id="address2" type="textbox" value="" style=" width:400px;height:20px;font-size:15px;"> 
+     <input type="button" value="Destination" onclick="geoAddress('address2')"> 
+</div>
+<div id="inputs">
+       <p><button type="button" onclick="createroute();">Create
+         Route</button></p>
+   </div>
+<div id="inputs">
+       <p><button type="button" onclick="places();">List
+         Places</button></p>
+   </div>
+<div id="content-pane">
+     <div id="inputs">
+       <p><button type="button" onclick="calculateDistances();">Calculate
+         distance</button></p>
+     </div>
+     <div id="outputDiv"></div>
+   </div>
+<div id="map_canvas" style="width:700px; height:600px;">
+
+
+</div>
+<div id="results">
+     <h2>Results</h2>
+     <ul id="places"></ul>
+     <button id="more">More results</button>
+   </div>
+
 </body>
 </html>
