@@ -15,8 +15,6 @@
 		var location2;
         var directionsService = new google.maps.DirectionsService();
 		var locations = new Array();
-		var marker;
-		var infowin;
 
         function initialize()
         {
@@ -34,9 +32,7 @@
 				
 				locations.push(event.latLng);
 				console.log("~~~~~~~~LOCATIONS~~~~~~~~~~~~");
-				infowin = new google.maps.InfoWin();
-				marker = new google.maps.Marker();
-				GetWeatherForLocation(event.latLng.lat(),event.latLng.lng(),event.latLng,map,marker,infowin);
+				GetWeatherForLocation(event.latLng.lat(),event.latLng.lng(),event.latLng,map);
 			});
 		}
 		//~~~~~~~~~~~END OF INITIALIZE~~~~~~~~~~~~~~~~~~~~~
@@ -88,13 +84,14 @@
 		var weatherpic = results[10];
 		
 		var image = new google.maps.MarkerImage(weatherpic,null,null,null, new google.maps.Size(30,36));
-		Marker = {
+		
+		var Marker = new google.maps.Marker({
                         position: Position,
                         map: Map,
                         title: city+'('+zip+')',
 						customInfo: "Hello",
 						icon: image
-                    };
+                    });
 		
 	};
 		
@@ -252,7 +249,7 @@
 					things.push(weatherpic);
 					console.log("logo = " + weatherpic);
 					
-					makeMarker(Position,Map,things,Marker,InfoWin);
+					makeMarker(Position,Map,things);
                 }
             });
 			
