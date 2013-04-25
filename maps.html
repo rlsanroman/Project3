@@ -15,6 +15,9 @@
 		var location2;
         var directionsService = new google.maps.DirectionsService();
 		var locations = new Array();
+		var marker;
+		var infowin;
+
         function initialize()
         {
            	var location = new google.maps.LatLng(30.613391, -96.338425);
@@ -31,38 +34,26 @@
 				
 				locations.push(event.latLng);
 				console.log("~~~~~~~~LOCATIONS~~~~~~~~~~~~");
-				var results = new Array();
-				results = GetWeatherForLocation(event.latLng.lat(),event.latLng.lng());
-				//console.log('results = ' + results[0]);
-				var image = new google.maps.MarkerImage('http://icons-ak.wxug.com/i/c/k/clear.gif ',null,null,null, new google.maps.Size(16,24));
-				
-				var marker = new google.maps.Marker({
-                        position: event.latLng,
-                        map: map,
-                        title: 'hi',
-						icon: image
-                    });
-                for(i = 0; i < locations.length; i++)
-                {
-                    console.log("lat = " + locations[i].lat() + ", long = " + locations[i].lng());
-                }
+				infowin = new google.maps.InfoWin();
+				marker = new google.maps.Marker();
+				GetWeatherForLocation(event.latLng.lat(),event.latLng.lng(),event.latLng,map,marker,infowin);
 			});
-        }
+		}
 		//~~~~~~~~~~~END OF INITIALIZE~~~~~~~~~~~~~~~~~~~~~
-        function calculateDistances() {
-            var service = new google.maps.DistanceMatrixService();
-            service.getDistanceMatrix(
-                    {
-                        origins: [address1],
-                        destinations: [address2],
-                        travelMode: google.maps.TravelMode.DRIVING,
-                        unitSystem: google.maps.UnitSystem.IMPERIAL,
-                        avoidHighways: false,
-                        avoidTolls: false
-                    }, callback);
-        }
+	function calculateDistances() {
+		var service = new google.maps.DistanceMatrixService();
+		service.getDistanceMatrix(
+				{
+					origins: [address1],
+					destinations: [address2],
+					travelMode: google.maps.TravelMode.DRIVING,
+					unitSystem: google.maps.UnitSystem.IMPERIAL,
+					avoidHighways: false,
+					avoidTolls: false
+				}, callback);
+	}
 
-        function callback(response, status) {
+	function callback(response, status) {
             if (status != google.maps.DistanceMatrixStatus.OK) {
                 alert('Error was: ' + status);
             } else {
@@ -82,7 +73,31 @@
             }
         }
 
-
+	function makeMarker(Position,Map,results,Marker,InfoWin)
+	{
+		var city = results[0];
+		var zip = results[1];
+		var realTemp_f = results[2];
+		var realTemp_c = results[3];
+		var feelsLike_f = results[4];
+		var feelsLike_c = results[5];
+		var wind = results[6];
+		var humidity = results[7];
+		var precip = results[8];
+		var weather = results[9];
+		var weatherpic = results[10];
+		
+		var image = new google.maps.MarkerImage(weatherpic,null,null,null, new google.maps.Size(30,36));
+		Marker = {
+                        position: Position,
+                        map: Map,
+                        title: city+'('+zip+')',
+						customInfo: "Hello",
+						icon: image
+                    };
+		
+	};
+		
 	function places(){
 		var request1 = {
 		   location: location2,
@@ -203,10 +218,10 @@
     </script>
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
     <script>
-        function GetWeatherForLocation(lat, lon)
+        function GetWeatherForLocation(lat, lon, Position, Map, Marker, InfoWin)
 		{
-			var results = new Array();
-            $.ajax({
+			var results;
+            results = $.ajax({
                 url:
                         "http://api.wunderground.com/api/44436df8c5396f7d/geolookup/conditions/q/"+lat+","+lon+".json",
                 dataType: "jsonp",
@@ -223,26 +238,25 @@
                     var precip = parsed_json['current_observation']['precip_today_string'];
 					var weather = parsed_json['current_observation']['weather'];
 					var weatherpic = parsed_json['current_observation']['icon_url'];
-					
-					results.push(location);
-					results.push(zip);
-					results.push(realTemp_f);
-					results.push(realTemp_c);
-					results.push(feelsLike_f);
-					results.push(feelsLike_c);
-					results.push(wind);
-					results.push(humidity);
-					results.push(precip);
-					results.push(weather);
-					results.push(weatherpic);
-					
+					var things = new Array();
+					things.push(location);
+					things.push(zip);
+					things.push(realTemp_f);
+					things.push(realTemp_c);
+					things.push(feelsLike_f);
+					things.push(feelsLike_c);
+					things.push(wind);
+					things.push(humidity);
+					things.push(precip);
+					things.push(weather);
+					things.push(weatherpic);
 					console.log("logo = " + weatherpic);
-                    alert("Temp in " + location + "(" + zip + ") is: "+realTemp_f + "F\nfeels like: "+feelsLike_f +"F");
 					
+					makeMarker(Position,Map,things,Marker,InfoWin);
                 }
             });
 			
-			//return results;
+			return results;
         }
     </script>
 	<style>
